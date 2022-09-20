@@ -3,15 +3,16 @@ package main
 import (
 	controller "github.com/sQUARys/TestTaskAvito/app/controllers"
 	"github.com/sQUARys/TestTaskAvito/app/repositories"
-	routers "github.com/sQUARys/TestTaskAvito/app/routers"
+	"github.com/sQUARys/TestTaskAvito/app/routers"
 	"github.com/sQUARys/TestTaskAvito/app/services"
 	"net/http"
 )
 
 //Необходимо реализовать микросервис для работы с балансом пользователей
-//(зачисление средств, списание средств,
+//зачисление средств,
+//списание средств,
 //перевод средств от пользователя к пользователю,
-//а также метод получения баланса пользователя).
+// метод получения баланса пользователя DONE
 //	Сервис должен предоставлять HTTP API и принимать/отдавать
 //	запросы/ответы в формате JSON.
 

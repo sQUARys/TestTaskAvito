@@ -1,11 +1,13 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/sQUARys/TestTaskAvito/app/users"
 	"log"
+	"time"
 )
 
 const (
@@ -15,10 +17,11 @@ const (
 	password = "myPassword"
 	dbname   = "myDb"
 
-	format                 = "(%d , '%s' , %d , '%s'),"
+	format                 = "(%d , '%d'),"
 	connectionStringFormat = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 
 	dbOrdersByIdRequest = "SELECT * FROM user_table WHERE id = $1"
+	dbInsertJSON        = `INSERT INTO "order_table"( "id", "balance") VALUES `
 )
 
 type Repository struct {
@@ -59,4 +62,21 @@ func (repo *Repository) GetUserBalance(id int) (int, error) {
 	}
 
 	return user.Balance, nil
+}
+
+func (repo *Repository) DepositMoney(user users.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dbInsertRequest := fmt.Sprintf(format, user.Id, user.Balance+user.Deposit)
+
+	_, err := repo.DbStruct.ExecContext(
+		ctx,
+		dbInsertRequest,
+	)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

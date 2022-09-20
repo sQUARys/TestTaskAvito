@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
+	"github.com/sQUARys/TestTaskAvito/app/users"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -51,4 +53,20 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(balanceJSON)
 
+}
+
+func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("ERROR in deposit money : ", err)
+	}
+
+	var user users.User
+
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		fmt.Println("ERROR in deposit money : ", err)
+	}
+
+	ctr.Service.DepositMoney(user)
 }
