@@ -1,7 +1,7 @@
 package users
 
 type User struct {
-	Id      int
-	Balance int
-	Deposit int
+	Id          int `json:"id"`
+	Balance     int `json:"balance,omitempty"`
+	UpdateValue int `json:"updateValue,omitempty"`
 }

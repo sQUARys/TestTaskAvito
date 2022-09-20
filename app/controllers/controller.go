@@ -58,15 +58,41 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("ERROR in deposit money : ", err)
+		fmt.Println("Error in deposit money : ", err)
 	}
 
 	var user users.User
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		fmt.Println("ERROR in deposit money : ", err)
+		fmt.Println("Error in deposit money : ", err)
 	}
 
-	ctr.Service.DepositMoney(user)
+	if user.UpdateValue < 0 {
+		fmt.Println("Deposit value can't be negative. ")
+	}
+
+	err = ctr.Service.DepositMoney(user)
+	if err != nil {
+		fmt.Println("Error in deposit money : ", err)
+	}
+}
+
+func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error in withdraw money : ", err)
+	}
+
+	var user users.User
+
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		fmt.Println("Error in withdraw money : ", err)
+	}
+
+	err = ctr.Service.WithdrawMoney(user)
+	if err != nil {
+		fmt.Println("Error in withdraw money : ", err)
+	}
 }

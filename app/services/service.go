@@ -11,6 +11,7 @@ type Service struct {
 type usersRepository interface {
 	GetUserBalance(id int) (int, error)
 	DepositMoney(user users.User) error
+	WithdrawMoney(user users.User) error
 }
 
 func New(repository usersRepository) *Service {
@@ -25,9 +26,12 @@ func (service *Service) GetUserBalance(id int) (int, error) {
 	return balance, err
 }
 
-func (service *Service) DepositMoney(user users.User) {
-	if user.Deposit < 0 {
-		return
-	}
-	service.Repo.DepositMoney(user)
+func (service *Service) DepositMoney(user users.User) error {
+	err := service.Repo.DepositMoney(user)
+	return err
+}
+
+func (service *Service) WithdrawMoney(user users.User) error {
+	err := service.Repo.WithdrawMoney(user)
+	return err
 }
