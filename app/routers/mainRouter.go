@@ -22,4 +22,6 @@ func (r *Router) SetRoutes() {
 	r.Router.HandleFunc("/get-balance/{id}", r.Controller.GetUserBalance).Methods("Get")
 	r.Router.HandleFunc("/deposit-money/", r.Controller.DepositMoney).Methods("Post")
 	r.Router.HandleFunc("/withdraw-money/", r.Controller.WithdrawMoney).Methods("Post")
+	r.Router.HandleFunc("/transfer-money/", r.Controller.TransferMoney).Methods("Post")
+
 }

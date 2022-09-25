@@ -12,6 +12,7 @@ type usersRepository interface {
 	GetUserBalance(id int) (int, error)
 	DepositMoney(user users.User) error
 	WithdrawMoney(user users.User) error
+	TransferMoney(usersTransfer users.TransferMoney) error
 }
 
 func New(repository usersRepository) *Service {
@@ -33,5 +34,10 @@ func (service *Service) DepositMoney(user users.User) error {
 
 func (service *Service) WithdrawMoney(user users.User) error {
 	err := service.Repo.WithdrawMoney(user)
+	return err
+}
+
+func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
+	err := service.Repo.TransferMoney(usersTransfer)
 	return err
 }

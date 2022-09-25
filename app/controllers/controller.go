@@ -10,10 +10,12 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type Controller struct {
 	Service services.Service
+	mut     sync.Mutex
 }
 
 func New(service *services.Service) *Controller {
@@ -51,7 +53,12 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(balanceJSON)
+	status, err := w.Write(balanceJSON)
+	if err != nil {
+		log.Println("Error json in controller level : ", err)
+		w.WriteHeader(status)
+		return
+	}
 
 }
 
@@ -68,11 +75,15 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error in deposit money : ", err)
 	}
 
-	if user.UpdateValue < 0 {
-		fmt.Println("Deposit value can't be negative. ")
+	if user.UpdateValue <= 0 {
+		fmt.Println("Deposit value can't be negative or nought. ")
 	}
 
+	ctr.mut.Lock()
+	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на внесение, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+
 	err = ctr.Service.DepositMoney(user)
+
 	if err != nil {
 		fmt.Println("Error in deposit money : ", err)
 	}
@@ -91,8 +102,42 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error in withdraw money : ", err)
 	}
 
+	if user.UpdateValue <= 0 {
+		fmt.Println("Withdraw value can't be negative or nought. ")
+	}
+
+	ctr.mut.Lock()
+	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+
 	err = ctr.Service.WithdrawMoney(user)
 	if err != nil {
 		fmt.Println("Error in withdraw money : ", err)
 	}
+}
+
+func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("Error in transfer money : ", err)
+	}
+
+	var usersTransfer users.TransferMoney
+
+	err = json.Unmarshal(body, &usersTransfer)
+	if err != nil {
+		fmt.Println("Error in transfer money : ", err)
+	}
+
+	if usersTransfer.SendingAmount <= 0 {
+		fmt.Println("Sending amount value can't be negative or nought. ")
+	}
+
+	ctr.mut.Lock()
+	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+
+	err = ctr.Service.TransferMoney(usersTransfer)
+	if err != nil {
+		fmt.Println("Error in withdraw money : ", err)
+	}
+
 }

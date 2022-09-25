@@ -17,11 +17,9 @@ const (
 	password = "myPassword"
 	dbname   = "myDb"
 
-	format                 = "(%d , '%d'),"
 	connectionStringFormat = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 
 	dbOrdersByIdRequest = "SELECT * FROM user_table WHERE id = $1"
-	dbInsertJSON        = `INSERT INTO user_table( "id", "balance" ) VALUES `
 	dbUpdateJSON        = "UPDATE user_table SET balance=%d WHERE id=%d"
 )
 
@@ -111,5 +109,48 @@ func (repo *Repository) WithdrawMoney(user users.User) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (repo *Repository) TransferMoney(usersTransfer users.TransferMoney) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	senderBalance, err := repo.GetUserBalance(usersTransfer.IdOfSenderUser)
+	if err != nil {
+		return err
+	}
+
+	recipientBalance, err := repo.GetUserBalance(usersTransfer.IdOfRecipientUser)
+	if err != nil {
+		return err
+	}
+
+	if senderBalance-usersTransfer.SendingAmount < 0 {
+		return fmt.Errorf("You can't transfer more than you have in a balance. Please repeat operation. ")
+	}
+
+	dbInsertRequestSender := fmt.Sprintf(dbUpdateJSON, senderBalance-usersTransfer.SendingAmount, usersTransfer.IdOfSenderUser)
+
+	_, err = repo.DbStruct.ExecContext(
+		ctx,
+		dbInsertRequestSender,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	dbInsertRequestRecipient := fmt.Sprintf(dbUpdateJSON, recipientBalance+usersTransfer.SendingAmount, usersTransfer.IdOfRecipientUser)
+
+	_, err = repo.DbStruct.ExecContext(
+		ctx,
+		dbInsertRequestRecipient,
+	)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
