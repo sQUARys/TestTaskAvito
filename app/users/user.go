@@ -13,8 +13,7 @@ type TransferMoney struct {
 }
 
 type Transaction struct {
-	UserId        int    `json:"userId"`
-	OrdinalNumber int    `json:"ordinalNumber"`
-	Date          string `json:"date"`
-	Description   string `json:"description"`
+	UserId      int    `json:"userId"`
+	Date        string `json:"date"`
+	Description string `json:"description"`
 }

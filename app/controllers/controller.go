@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
 	"github.com/sQUARys/TestTaskAvito/app/users"
@@ -212,7 +211,19 @@ func (ctr *Controller) GetUserTransactions(w http.ResponseWriter, r *http.Reques
 
 	transactions, err := ctr.Service.GetUserTransactions(idInt)
 
-	fmt.Println("Transactions : ", transactions)
+	if err != nil {
+		status, err := w.Write([]byte("Error in get transactions : " + err.Error()))
+		ErrorHandler(w, status, err)
+		return
+	}
+
+	transactionsJSON, err := json.Marshal(transactions)
+	if err != nil {
+		status, err := w.Write([]byte("Error in json transactions : " + err.Error()))
+		ErrorHandler(w, status, err)
+		return
+	}
+	w.Write(transactionsJSON)
 }
 
 func ErrorHandler(w http.ResponseWriter, status int, err error) {
