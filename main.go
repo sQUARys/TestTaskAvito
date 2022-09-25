@@ -5,16 +5,18 @@ import (
 	"github.com/sQUARys/TestTaskAvito/app/repositories"
 	"github.com/sQUARys/TestTaskAvito/app/routers"
 	"github.com/sQUARys/TestTaskAvito/app/services"
+	"log"
 	"net/http"
 )
 
 //Необходимо реализовать микросервис для работы с балансом пользователей
 //зачисление средств, DONE
 //списание средств, DONE
-// все операции делать только при входе в систему подумать нужно ли это
 // сделать mutex чтобы избежать гонки DONE
 //перевод средств от пользователя к пользователю DONE
 // метод получения баланса пользователя DONE
+//написать тесты
+// в любой валюте
 //	Сервис должен предоставлять HTTP API и принимать/отдавать
 //	запросы/ответы в формате JSON.
 
@@ -25,5 +27,10 @@ func main() {
 	routers := routers.New(ctr)
 
 	routers.SetRoutes()
-	http.ListenAndServe(":8080", routers.Router)
+	err := http.ListenAndServe(":8081", routers.Router)
+
+	if err != nil {
+		log.Println("Error in main : ", err)
+		return
+	}
 }

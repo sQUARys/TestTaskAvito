@@ -13,6 +13,7 @@ type usersRepository interface {
 	DepositMoney(user users.User) error
 	WithdrawMoney(user users.User) error
 	TransferMoney(usersTransfer users.TransferMoney) error
+	isUserExisting(id int) bool
 }
 
 func New(repository usersRepository) *Service {
@@ -40,4 +41,9 @@ func (service *Service) WithdrawMoney(user users.User) error {
 func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
 	err := service.Repo.TransferMoney(usersTransfer)
 	return err
+}
+
+func (service *Service) isUserExisting(id int) bool {
+	isExist := service.Repo.isUserExisting(id)
+	return isExist
 }

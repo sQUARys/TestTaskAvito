@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
 	"github.com/sQUARys/TestTaskAvito/app/users"
@@ -29,7 +28,6 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	idString := vars["id"]
-	fmt.Println("ID : ", idString)
 
 	idInt, err := strconv.Atoi(idString)
 	if err != nil {
@@ -37,6 +35,8 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	if ctr.Service.isUsers
 
 	balance, err := ctr.Service.GetUserBalance(idInt)
 
@@ -65,18 +65,18 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error in deposit money : ", err)
+		log.Println("Error in deposit money : ", err)
 	}
 
 	var user users.User
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		fmt.Println("Error in deposit money : ", err)
+		log.Println("Error in deposit money : ", err)
 	}
 
 	if user.UpdateValue <= 0 {
-		fmt.Println("Deposit value can't be negative or nought. ")
+		log.Println("Deposit value can't be negative or nought. ")
 	}
 
 	ctr.mut.Lock()
@@ -85,25 +85,25 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 	err = ctr.Service.DepositMoney(user)
 
 	if err != nil {
-		fmt.Println("Error in deposit money : ", err)
+		log.Println("Error in deposit money : ", err)
 	}
 }
 
 func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error in withdraw money : ", err)
+		log.Println("Error in withdraw money : ", err)
 	}
 
 	var user users.User
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		fmt.Println("Error in withdraw money : ", err)
+		log.Println("Error in withdraw money : ", err)
 	}
 
 	if user.UpdateValue <= 0 {
-		fmt.Println("Withdraw value can't be negative or nought. ")
+		log.Println("Withdraw value can't be negative or nought. ")
 	}
 
 	ctr.mut.Lock()
@@ -111,25 +111,25 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 
 	err = ctr.Service.WithdrawMoney(user)
 	if err != nil {
-		fmt.Println("Error in withdraw money : ", err)
+		log.Println("Error in withdraw money : ", err)
 	}
 }
 
 func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error in transfer money : ", err)
+		log.Println("Error in transfer money : ", err)
 	}
 
 	var usersTransfer users.TransferMoney
 
 	err = json.Unmarshal(body, &usersTransfer)
 	if err != nil {
-		fmt.Println("Error in transfer money : ", err)
+		log.Println("Error in transfer money : ", err)
 	}
 
 	if usersTransfer.SendingAmount <= 0 {
-		fmt.Println("Sending amount value can't be negative or nought. ")
+		log.Println("Sending amount value can't be negative or nought. ")
 	}
 
 	ctr.mut.Lock()
@@ -137,7 +137,7 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 
 	err = ctr.Service.TransferMoney(usersTransfer)
 	if err != nil {
-		fmt.Println("Error in withdraw money : ", err)
+		log.Println("Error in withdraw money : ", err)
 	}
 
 }
