@@ -21,7 +21,7 @@ const (
 
 	dbCreateUserRequest = `INSERT INTO "user_table"( "id") VALUES (%d)`
 	dbUsersByIdRequest  = "SELECT * FROM user_table WHERE id = $1"
-	dbUpdateJSON        = "UPDATE user_table SET balance=%d WHERE id=%d"
+	dbUpdateJSON        = "UPDATE user_table SET balance=%2f WHERE id=%d"
 )
 
 type Repository struct {
@@ -49,15 +49,15 @@ func New() *Repository {
 	return &repo
 }
 
-func (repo *Repository) GetUserBalance(id int) (int, error) {
+func (repo *Repository) GetUserBalance(id int) (float64, error) {
 	row := repo.DbStruct.QueryRow(dbUsersByIdRequest, id)
 
 	var user users.User
 
-	var defaultBalance sql.NullInt64 // для того чтобы учитывать то что столбец баланса может быть null(пустым)
+	var defaultBalance sql.NullFloat64 // для того чтобы учитывать то что столбец баланса может быть null(пустым)
 
 	err := row.Scan(&user.Id, &defaultBalance)
-	user.Balance = int(defaultBalance.Int64)
+	user.Balance = defaultBalance.Float64
 
 	if err != nil {
 		return user.Balance, err

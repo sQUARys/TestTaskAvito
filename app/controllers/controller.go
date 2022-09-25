@@ -27,6 +27,8 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 
 	vars := mux.Vars(r)
+	currency := vars["currency"]
+	ctr.Service.ConvertTo = currency
 	idString := vars["id"]
 
 	idInt, err := strconv.Atoi(idString)
