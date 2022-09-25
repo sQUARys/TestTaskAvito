@@ -54,7 +54,10 @@ func (repo *Repository) GetUserBalance(id int) (int, error) {
 
 	var user users.User
 
-	err := row.Scan(&user.Id, &user.Balance)
+	var defaultBalance sql.NullInt64 // для того чтобы учитывать то что столбец баланса может быть null(пустым)
+
+	err := row.Scan(&user.Id, &defaultBalance)
+	user.Balance = int(defaultBalance.Int64)
 
 	if err != nil {
 		return user.Balance, err
