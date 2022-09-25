@@ -33,39 +33,38 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 
 	idInt, err := strconv.Atoi(idString)
 	if err != nil {
-		log.Println("Error strconv in controller level : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("Error strconv in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	if !ctr.Service.IsUserExisting(idInt) { // если в бд нет пользователя с таким id выводим ошибку
-		log.Println("This user doesn't exist, choose another existing user. ")
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("This user doesn't exist, choose another existing user. "))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	balance, err := ctr.Service.GetUserBalance(idInt)
 
 	if err != nil {
-		log.Println("Error balance in controller level : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("Error balance in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	balanceJSON, err := json.Marshal(balance)
 	if err != nil {
-		log.Println("Error json in controller level : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("Error json in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
-	status, err := w.Write(balanceJSON)
+	_, err = w.Write(balanceJSON)
 	if err != nil {
-		log.Println("Error json in controller level : ", err)
-		w.WriteHeader(status)
+		status, err := w.Write([]byte("Error json in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
-
 }
 
 func (ctr *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -76,15 +75,15 @@ func (ctr *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	idInt, err := strconv.Atoi(idString)
 	if err != nil {
-		log.Println("Error strconv in controller level : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("Error strconv in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	err = ctr.Service.CreateUser(idInt)
 	if err != nil {
-		log.Println("Error in creating user : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("Error in creating user :  " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 }
@@ -92,24 +91,27 @@ func (ctr *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Error in deposit money : ", err)
+		status, err := w.Write([]byte("Error in deposit money :" + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	var user users.User
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		log.Println("Error in deposit money : ", err)
+		status, err := w.Write([]byte("Error in deposit money :" + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	if !ctr.Service.IsUserExisting(user.Id) { // если в бд нет пользователя с таким id выводим ошибку
-		log.Println("This user doesn't exist, choose another existing user. ")
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("This user doesn't exist, choose another existing user. " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	if user.UpdateValue <= 0 {
-		log.Println("Deposit value can't be negative or nought. ")
+		status, err := w.Write([]byte("Deposit value can't be negative or nought. " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	ctr.mut.Lock()
@@ -118,31 +120,35 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 	err = ctr.Service.DepositMoney(user)
 
 	if err != nil {
-		log.Println("Error in deposit money : ", err)
+		status, err := w.Write([]byte("Error in deposit money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 }
 
 func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Error in withdraw money : ", err)
+		status, err := w.Write([]byte("Error in withdraw money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	var user users.User
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		log.Println("Error in withdraw money : ", err)
+		status, err := w.Write([]byte("Error in withdraw money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	if !ctr.Service.IsUserExisting(user.Id) { // если в бд нет пользователя с таким id выводим ошибку
-		log.Println("This user doesn't exist, choose another existing user. ")
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("This user doesn't exist, choose another existing user. " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	if user.UpdateValue <= 0 {
-		log.Println("Withdraw value can't be negative or nought. ")
+		status, err := w.Write([]byte("Withdraw value can't be negative or nought. " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	ctr.mut.Lock()
@@ -150,31 +156,35 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 
 	err = ctr.Service.WithdrawMoney(user)
 	if err != nil {
-		log.Println("Error in withdraw money : ", err)
+		status, err := w.Write([]byte("Error in withdraw money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 }
 
 func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Error in transfer money : ", err)
+		status, err := w.Write([]byte("Error in transfer money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	var usersTransfer users.TransferMoney
 
 	err = json.Unmarshal(body, &usersTransfer)
 	if err != nil {
-		log.Println("Error in transfer money : ", err)
+		status, err := w.Write([]byte("Error in transfer money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	if !ctr.Service.IsUserExisting(usersTransfer.IdOfSenderUser) || !ctr.Service.IsUserExisting(usersTransfer.IdOfRecipientUser) { // если в бд нет пользователя с таким id выводим ошибку
-		log.Println("This user doesn't exist, choose another existing user. ")
-		w.WriteHeader(http.StatusInternalServerError)
+		status, err := w.Write([]byte("This user doesn't exist, choose another existing user. " + err.Error()))
+		ErrorHandler(w, status, err)
 		return
 	}
 
 	if usersTransfer.SendingAmount <= 0 {
-		log.Println("Sending amount value can't be negative or nought. ")
+		status, err := w.Write([]byte("Sending amount value can't be negative or nought. " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
 	ctr.mut.Lock()
@@ -182,7 +192,15 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 
 	err = ctr.Service.TransferMoney(usersTransfer)
 	if err != nil {
-		log.Println("Error in withdraw money : ", err)
+		status, err := w.Write([]byte("Error in transfer money : " + err.Error()))
+		ErrorHandler(w, status, err)
 	}
 
+}
+
+func ErrorHandler(w http.ResponseWriter, status int, err error) {
+	if err != nil {
+		log.Println(err)
+	}
+	w.WriteHeader(status)
 }
