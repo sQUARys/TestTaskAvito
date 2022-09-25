@@ -19,9 +19,8 @@ const (
 
 	connectionStringFormat = "host=%s port=%d user=%s password=%s dbname=%s sslmode=disable"
 
-	dbCreateUserRequest = `INSERT INTO "user_table"( "id", "balance") VALUES (%d, %d)`
-	//"INSERT INTO user_table VALUES (%1 , %2)"
-	dbOrdersByIdRequest = "SELECT * FROM user_table WHERE id = $1"
+	dbCreateUserRequest = `INSERT INTO "user_table"( "id") VALUES (%d)`
+	dbUsersByIdRequest  = "SELECT * FROM user_table WHERE id = $1"
 	dbUpdateJSON        = "UPDATE user_table SET balance=%d WHERE id=%d"
 )
 
@@ -50,18 +49,8 @@ func New() *Repository {
 	return &repo
 }
 
-func (repo *Repository) isUserExisting(id int) bool {
-	row := repo.DbStruct.QueryRow(dbOrdersByIdRequest, id)
-
-	var user users.User
-
-	err := row.Scan(&user.Id, &user.Balance)
-
-	return err != sql.ErrNoRows
-}
-
 func (repo *Repository) GetUserBalance(id int) (int, error) {
-	row := repo.DbStruct.QueryRow(dbOrdersByIdRequest, id)
+	row := repo.DbStruct.QueryRow(dbUsersByIdRequest, id)
 
 	var user users.User
 
@@ -161,6 +150,34 @@ func (repo *Repository) TransferMoney(usersTransfer users.TransferMoney) error {
 	_, err = repo.DbStruct.ExecContext(
 		ctx,
 		dbInsertRequestRecipient,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *Repository) IsUserExisting(id int) bool {
+	row := repo.DbStruct.QueryRow(dbUsersByIdRequest, id)
+
+	var user users.User
+
+	err := row.Scan(&user.Id, &user.Balance)
+
+	return err != sql.ErrNoRows
+}
+
+func (repo *Repository) CreateUser(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dbInsertRequest := fmt.Sprintf(dbCreateUserRequest, id)
+
+	_, err := repo.DbStruct.ExecContext(
+		ctx,
+		dbInsertRequest,
 	)
 
 	if err != nil {

@@ -9,11 +9,12 @@ type Service struct {
 }
 
 type usersRepository interface {
+	IsUserExisting(id int) bool
 	GetUserBalance(id int) (int, error)
 	DepositMoney(user users.User) error
 	WithdrawMoney(user users.User) error
 	TransferMoney(usersTransfer users.TransferMoney) error
-	isUserExisting(id int) bool
+	CreateUser(id int) error
 }
 
 func New(repository usersRepository) *Service {
@@ -43,7 +44,12 @@ func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
 	return err
 }
 
-func (service *Service) isUserExisting(id int) bool {
-	isExist := service.Repo.isUserExisting(id)
+func (service *Service) IsUserExisting(id int) bool {
+	isExist := service.Repo.IsUserExisting(id)
 	return isExist
+}
+
+func (service *Service) CreateUser(id int) error {
+	err := service.Repo.CreateUser(id)
+	return err
 }
