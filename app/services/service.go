@@ -6,11 +6,13 @@ import (
 	"github.com/sQUARys/TestTaskAvito/app/users"
 	"io/ioutil"
 	"net/http"
+	"sync"
 )
 
 type Service struct {
 	Repo      usersRepository
 	ConvertTo string
+	sync.Mutex
 }
 
 type usersRepository interface {
@@ -60,6 +62,9 @@ func (service *Service) Convert(from string, to string, amount float64) (float64
 }
 
 func (service *Service) GetUserBalance(id int) (float64, error) {
+	service.Lock()
+	defer service.Unlock()
+
 	balance, err := service.Repo.GetUserBalance(id)
 	if err != nil {
 		return -1, err
@@ -74,26 +79,40 @@ func (service *Service) GetUserBalance(id int) (float64, error) {
 }
 
 func (service *Service) DepositMoney(user users.User) error {
+	service.Lock()
+	defer service.Unlock()
 	err := service.Repo.DepositMoney(user)
 	return err
 }
 
 func (service *Service) WithdrawMoney(user users.User) error {
+	service.Lock()
+	defer service.Unlock()
+
 	err := service.Repo.WithdrawMoney(user)
 	return err
 }
 
 func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
+	service.Lock()
+	defer service.Unlock()
+
 	err := service.Repo.TransferMoney(usersTransfer)
 	return err
 }
 
 func (service *Service) IsUserExisting(id int) bool {
+	service.Lock()
+	defer service.Unlock()
+
 	isExist := service.Repo.IsUserExisting(id)
 	return isExist
 }
 
 func (service *Service) CreateUser(id int) error {
+	service.Lock()
+	defer service.Unlock()
+
 	err := service.Repo.CreateUser(id)
 	return err
 }

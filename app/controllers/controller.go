@@ -14,7 +14,7 @@ import (
 
 type Controller struct {
 	Service services.Service
-	mut     sync.Mutex
+	sync.Mutex
 }
 
 func New(service *services.Service) *Controller {
@@ -114,8 +114,8 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, status, err)
 	}
 
-	ctr.mut.Lock()
-	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на внесение, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.Lock()
+	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на внесение, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.DepositMoney(user)
 
@@ -151,8 +151,8 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, status, err)
 	}
 
-	ctr.mut.Lock()
-	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.Lock()
+	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.WithdrawMoney(user)
 	if err != nil {
@@ -187,8 +187,8 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, status, err)
 	}
 
-	ctr.mut.Lock()
-	defer ctr.mut.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.Lock()
+	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.TransferMoney(usersTransfer)
 	if err != nil {
