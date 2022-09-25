@@ -7,14 +7,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Service struct {
 	Repo      usersRepository
+	Cache     transactionsCache
 	ConvertTo string
 	sync.Mutex
 }
 
+type transactionsCache interface {
+	GetUserTransactions(id int) ([]users.Transaction, error)
+	AddTransaction(userId int, description string, date string) error
+}
 type usersRepository interface {
 	IsUserExisting(id int) bool
 	GetUserBalance(id int) (float64, error)
@@ -24,9 +30,10 @@ type usersRepository interface {
 	CreateUser(id int) error
 }
 
-func New(repository usersRepository) *Service {
+func New(repository usersRepository, cache transactionsCache) *Service {
 	serv := Service{
 		Repo:      repository,
+		Cache:     cache,
 		ConvertTo: "",
 	}
 	return &serv
@@ -82,6 +89,13 @@ func (service *Service) DepositMoney(user users.User) error {
 	service.Lock()
 	defer service.Unlock()
 	err := service.Repo.DepositMoney(user)
+	if err == nil { // если все успешно внеслось
+		err = service.Cache.AddTransaction(user.Id, fmt.Sprintf("Внесение на сумму: %2f", user.UpdateValue),
+			time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
@@ -90,6 +104,12 @@ func (service *Service) WithdrawMoney(user users.User) error {
 	defer service.Unlock()
 
 	err := service.Repo.WithdrawMoney(user)
+	if err == nil { // если все успешно внеслось
+		err = service.Cache.AddTransaction(user.Id, fmt.Sprintf("Снятие на сумму: %2f", user.UpdateValue), time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
@@ -97,7 +117,16 @@ func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
 	service.Lock()
 	defer service.Unlock()
 
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
 	err := service.Repo.TransferMoney(usersTransfer)
+	if err == nil { // если все успешно внеслось
+		wg.Add(1)
+		go service.AddTransaction(&wg, usersTransfer.IdOfSenderUser, fmt.Sprintf("Перевод на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		wg.Add(1)
+		go service.AddTransaction(&wg, usersTransfer.IdOfRecipientUser, fmt.Sprintf("Получение перевода на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+	}
 	return err
 }
 
@@ -115,4 +144,21 @@ func (service *Service) CreateUser(id int) error {
 
 	err := service.Repo.CreateUser(id)
 	return err
+}
+
+func (service *Service) AddTransaction(wg *sync.WaitGroup, id int, description string, date string) error {
+	defer wg.Done()
+	err := service.Cache.AddTransaction(id, description, date)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (service *Service) GetUserTransactions(id int) ([]users.Transaction, error) {
+	service.Lock()
+	defer service.Unlock()
+
+	transactions, err := service.Cache.GetUserTransactions(id)
+	return transactions, err
 }

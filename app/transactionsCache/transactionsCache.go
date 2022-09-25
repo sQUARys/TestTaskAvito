@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/sQUARys/TestTaskAvito/app/users"
-	"math/rand"
 	"time"
 )
 
@@ -13,11 +12,10 @@ type Cache struct {
 	Client *redis.Client
 }
 
-type Transaction struct {
-	UserId        int    `json:"userId"`
-	OrdinalNumber int    `json:"ordinalNumber"`
-	Date          string `json:"date"`
-	Description   string `json:"description"`
+type FormatOfTransaction struct {
+	UserId      int
+	Description string
+	Date        string
 }
 
 func New() *Cache {
@@ -34,46 +32,47 @@ func New() *Cache {
 	}
 }
 
-func (c *Cache) AddTransaction(user users.User, description string, date string) error {
-	trans := Transaction{
-		UserId:        user.Id,
-		OrdinalNumber: rand.Int() % 10, // поправить
-		Date:          date,
-		Description:   description,
+func (c *Cache) AddTransaction(userId int, description string, date string) error {
+	transaction := FormatOfTransaction{
+		UserId:      userId,
+		Description: description,
+		Date:        date,
 	}
 
-	userJSON, err := json.Marshal(trans)
+	userJSON, err := json.Marshal(transaction)
 	if err != nil {
 		return err
 	}
 
-	err = c.Client.Set("transaction", userJSON, 10*time.Minute).Err()
+	err = c.Client.Set("transaction"+description, userJSON, time.Minute).Err()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Cache) GetUserTransaction(key string) (Transaction, error) {
+func (c *Cache) GetUserTransaction(key string) (users.Transaction, error) {
 	transactionJSON, err := c.Client.Get(key).Result()
 	if err != nil {
-		return Transaction{}, err
+		return users.Transaction{}, err
 	}
-	var transaction Transaction
+	var transaction users.Transaction
 	json.Unmarshal([]byte(transactionJSON), &transaction)
 	return transaction, nil
 }
 
-func (c *Cache) GetUserTransactions() ([]Transaction, error) {
+func (c *Cache) GetUserTransactions(id int) ([]users.Transaction, error) {
 	iter := c.Client.Scan(0, "", 0).Iterator()
-	var transactions []Transaction
+	var transactions []users.Transaction
 
 	for iter.Next() {
 		transaction, err := c.GetUserTransaction(iter.Val())
 		if err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, transaction)
+		if transaction.UserId == id {
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	if err := iter.Err(); err != nil {

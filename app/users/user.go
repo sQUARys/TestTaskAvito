@@ -11,3 +11,10 @@ type TransferMoney struct {
 	IdOfRecipientUser int     `json:"id-recipient"`
 	SendingAmount     float64 `json:"sending-amount"`
 }
+
+type Transaction struct {
+	UserId        int    `json:"userId"`
+	OrdinalNumber int    `json:"ordinalNumber"`
+	Date          string `json:"date"`
+	Description   string `json:"description"`
+}

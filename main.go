@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	controller "github.com/sQUARys/TestTaskAvito/app/controllers"
 	"github.com/sQUARys/TestTaskAvito/app/repositories"
 	"github.com/sQUARys/TestTaskAvito/app/routers"
@@ -35,20 +34,16 @@ import (
 
 func main() {
 	repoUsers := repositories.New()
-
 	repoTransactions := transactionsCache.New()
-	//repoTransactions.AddTransaction("1", users.User{Id: 1}, "Hello 1", time.Now().Format("01-02-2006 15:04:05"))
-	//repoTransactions.AddTransaction("2", users.User{Id: 2}, "Hello 2", time.Now().Format("01-02-2006 15:04:05"))
 
-	fmt.Println(repoTransactions.GetUserTransactions())
-	//time.Now().Format("01-02-2006 15:04:05")
-	service := services.New(repoUsers)
+	service := services.New(repoUsers, repoTransactions)
+
 	ctr := controller.New(service)
 
 	routers := routers.New(ctr)
 
 	routers.SetRoutes()
-	err := http.ListenAndServe(":8082", routers.Router)
+	err := http.ListenAndServe(":8083", routers.Router)
 
 	if err != nil {
 		log.Println("Error in main : ", err)

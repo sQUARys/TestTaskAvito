@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
 	"github.com/sQUARys/TestTaskAvito/app/users"
@@ -196,6 +197,22 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, status, err)
 	}
 
+}
+
+func (ctr *Controller) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idString := vars["id"]
+
+	idInt, err := strconv.Atoi(idString)
+	if err != nil {
+		status, err := w.Write([]byte("Error strconv in controller level : " + err.Error()))
+		ErrorHandler(w, status, err)
+		return
+	}
+
+	transactions, err := ctr.Service.GetUserTransactions(idInt)
+
+	fmt.Println("Transactions : ", transactions)
 }
 
 func ErrorHandler(w http.ResponseWriter, status int, err error) {
