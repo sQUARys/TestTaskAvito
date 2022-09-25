@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	controller "github.com/sQUARys/TestTaskAvito/app/controllers"
 	"github.com/sQUARys/TestTaskAvito/app/repositories"
 	"github.com/sQUARys/TestTaskAvito/app/routers"
 	"github.com/sQUARys/TestTaskAvito/app/services"
+	"github.com/sQUARys/TestTaskAvito/app/transactionsCache"
 	"log"
 	"net/http"
 )
@@ -25,16 +27,28 @@ import (
 //Примечание: напоминаем, что базовая валюта которая хранится на балансе у нас всегда рубль. В рамках этой задачи конвертация всегда происходит с базовой валюты.
 
 // тесты
-// mutex не везде есть
+// mutex не везде есть done
+
+//Задача: необходимо предоставить метод получения списка транзакций
+//с комментариями откуда и зачем были начислены/списаны средства с баланса.
+//Необходимо предусмотреть пагинацию и сортировку по сумме и дате.
 
 func main() {
-	repo := repositories.New()
-	service := services.New(repo)
+	repoUsers := repositories.New()
+
+	repoTransactions := transactionsCache.New()
+	//repoTransactions.AddTransaction("1", users.User{Id: 1}, "Hello 1", time.Now().Format("01-02-2006 15:04:05"))
+	//repoTransactions.AddTransaction("2", users.User{Id: 2}, "Hello 2", time.Now().Format("01-02-2006 15:04:05"))
+
+	fmt.Println(repoTransactions.GetUserTransactions())
+	//time.Now().Format("01-02-2006 15:04:05")
+	service := services.New(repoUsers)
 	ctr := controller.New(service)
+
 	routers := routers.New(ctr)
 
 	routers.SetRoutes()
-	err := http.ListenAndServe(":8081", routers.Router)
+	err := http.ListenAndServe(":8082", routers.Router)
 
 	if err != nil {
 		log.Println("Error in main : ", err)
