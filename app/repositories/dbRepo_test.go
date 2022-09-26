@@ -19,6 +19,8 @@ func TestRepository_CreateUser(t *testing.T) {
 		{name: "Test1", repo: New(), args: args{id: 1}, wantErr: false},
 		{name: "Test2", repo: New(), args: args{id: -100}, wantErr: true},
 		{name: "Test3", repo: New(), args: args{id: 0}, wantErr: false},
+		{name: "Test4", repo: New(), args: args{id: 2}, wantErr: false},
+		{name: "Test5", repo: New(), args: args{id: 3}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -27,6 +29,37 @@ func TestRepository_CreateUser(t *testing.T) {
 			}
 			if err := repo.CreateUser(tt.args.id); (err != nil) != tt.wantErr {
 				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestRepository_DepositMoney(t *testing.T) {
+	user1 := users.User{
+		Id: 1,
+	}
+	user3 := users.User{
+		Id:          3,
+		UpdateValue: 5000,
+	}
+	repo := New()
+
+	tests := []struct {
+		name    string
+		fields  *Repository
+		args    users.User
+		wantErr bool
+	}{
+		{name: "Test1", fields: repo, args: user1, wantErr: false},
+		{name: "Test2", fields: repo, args: user3, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &Repository{
+				DbStruct: tt.fields.DbStruct,
+			}
+			if err := repo.DepositMoney(tt.args); (err != nil) != tt.wantErr {
+				t.Errorf("DepositMoney() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -43,7 +76,7 @@ func TestRepository_WithdrawMoney(t *testing.T) {
 	}
 	user3 := users.User{
 		Id:          3,
-		UpdateValue: 1500,
+		UpdateValue: 2000,
 	}
 	repo := New()
 
@@ -64,42 +97,6 @@ func TestRepository_WithdrawMoney(t *testing.T) {
 			}
 			if err := repo.WithdrawMoney(tt.args); (err != nil) != tt.wantErr {
 				t.Errorf("WithdrawMoney() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestRepository_DepositMoney(t *testing.T) {
-	user1 := users.User{
-		Id: 1,
-	}
-	user2 := users.User{
-		Id:          2,
-		UpdateValue: -500,
-	}
-	user3 := users.User{
-		Id:          3,
-		UpdateValue: 1500,
-	}
-	repo := New()
-
-	tests := []struct {
-		name    string
-		fields  *Repository
-		args    users.User
-		wantErr bool
-	}{
-		{name: "Test1", fields: repo, args: user1, wantErr: false},
-		{name: "Test2", fields: repo, args: user2, wantErr: false},
-		{name: "Test3", fields: repo, args: user3, wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			repo := &Repository{
-				DbStruct: tt.fields.DbStruct,
-			}
-			if err := repo.DepositMoney(tt.args); (err != nil) != tt.wantErr {
-				t.Errorf("DepositMoney() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
