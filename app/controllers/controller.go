@@ -79,7 +79,11 @@ func (ctr *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, status, err)
 		return
 	}
-
+	if idInt < 0 {
+		status, err := w.Write([]byte("Id can't be negative "))
+		ErrorHandler(w, status, err)
+		return
+	}
 	err = ctr.Service.CreateUser(idInt)
 	if err != nil {
 		status, err := w.Write([]byte("Error in creating user :  " + err.Error()))
