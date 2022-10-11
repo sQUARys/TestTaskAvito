@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/sQUARys/TestTaskAvito/app/users"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -54,7 +55,12 @@ func (service *Service) Convert(from string, to string, amount float64) (float64
 
 	res, err := client.Do(req)
 	if res.Body != nil {
-		defer res.Body.Close()
+		defer func() {
+			err := res.Body.Close()
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 	}
 
 	jsonMap := make(map[string]interface{})
@@ -117,15 +123,16 @@ func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
 	service.Lock()
 	defer service.Unlock()
 
-	var wg sync.WaitGroup
-	defer wg.Wait()
-
 	err := service.Repo.TransferMoney(usersTransfer)
 	if err == nil { // если все успешно внеслось
-		wg.Add(1)
-		go service.AddTransaction(&wg, usersTransfer.IdOfSenderUser, fmt.Sprintf("Перевод на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
-		wg.Add(1)
-		go service.AddTransaction(&wg, usersTransfer.IdOfRecipientUser, fmt.Sprintf("Получение перевода на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		err = service.AddTransaction(usersTransfer.IdOfSenderUser, fmt.Sprintf("Перевод на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
+		err = service.AddTransaction(usersTransfer.IdOfRecipientUser, fmt.Sprintf("Получение перевода на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
@@ -146,8 +153,7 @@ func (service *Service) CreateUser(id int) error {
 	return err
 }
 
-func (service *Service) AddTransaction(wg *sync.WaitGroup, id int, description string, date string) error {
-	defer wg.Done()
+func (service *Service) AddTransaction(id int, description string, date string) error {
 	err := service.Cache.AddTransaction(id, description, date)
 	if err != nil {
 		return err
