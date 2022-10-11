@@ -14,7 +14,7 @@ import (
 
 type Controller struct {
 	Service services.Service
-	sync.Mutex
+	sync.RWMutex
 }
 
 func New(service *services.Service) *Controller {
@@ -105,8 +105,8 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err)
 	}
 
-	ctr.Lock()
-	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на внесение, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.RLock()
+	defer ctr.RUnlock() // для того чтобы при нескольких одновременно отправленных запросов на внесение, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.DepositMoney(user)
 
@@ -137,8 +137,8 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err)
 	}
 
-	ctr.Lock()
-	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.RLock()
+	defer ctr.RUnlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.WithdrawMoney(user)
 	if err != nil {
@@ -168,8 +168,8 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err)
 	}
 
-	ctr.Lock()
-	defer ctr.Unlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
+	ctr.RLock()
+	defer ctr.RUnlock() // для того чтобы при нескольких одновременно отправленных запросов на снятие, оно проходило последовательно и не было багов с балансом(чтобы не было гонки)
 
 	err = ctr.Service.TransferMoney(usersTransfer)
 	if err != nil {
@@ -204,7 +204,7 @@ func (ctr *Controller) GetUserTransactions(w http.ResponseWriter, r *http.Reques
 }
 
 func ErrorHandler(w http.ResponseWriter, err error) {
-	status, writeError := w.Write([]byte(err.Error()))
+	_, writeError := w.Write([]byte(err.Error()))
 	if writeError != nil {
 		log.Println(writeError)
 	}

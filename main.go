@@ -16,7 +16,7 @@ import (
 //3. Контексты не везде прокидываются явно
 //4. Используется дефолтный http клиент в конверторе без таймаутов DONE
 //5. В запросах к базе данных не используются плейсхолдеры ВОПРОС
-//6. Отсутствует файл миграции для базы данных, не ясна структура используемых таблиц IN PROGRESS
+//6. Отсутствует файл миграции для базы данных, не ясна структура используемых таблиц
 //7. Локи на уровне сервиса - пока ищем баланс одного пользователя, никто другой не может свой баланс получить
 //8. Обработка ошибок в контроллере - запись данных в ответ до записи заголовков это ошибка (как и формирование http статуса
 //из количества записанных байт из Write)
@@ -36,13 +36,15 @@ func main() {
 	routers.SetRoutes()
 
 	server := http.Server{
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		Addr:         ":8083",
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		Addr:         ":8081",
 		Handler:      routers.Router,
 	}
 
-	server.ListenAndServe()
+	err = server.ListenAndServe()
+	//
+	//err = http.ListenAndServe(":8081", routers.Router)
 
 	if err != nil {
 		log.Println("Error in main : ", err)

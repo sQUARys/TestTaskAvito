@@ -38,25 +38,6 @@ func New() *Repository {
 		log.Fatalln(err)
 	}
 
-	//driver, err := mysql.WithInstance(db, &mysql.Config{})
-	//if err != nil {
-	//	log.Fatalf("could not start sql migration... %v", err)
-	//}
-	//
-	//m, err := migrate.NewWithDatabaseInstance(
-	//	"/",
-	//	"postgres", driver)
-	//
-	//if err != nil {
-	//	log.Fatalf("migration failed... %v", err)
-	//}
-	//
-	//if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-	//	log.Fatalf("An error occurred while syncing the database.. %v", err)
-	//}
-	//
-	//log.Println("Database migrated")
-
 	repo := Repository{
 		DbStruct: db,
 	}

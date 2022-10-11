@@ -15,7 +15,7 @@ type Service struct {
 	Repo      usersRepository
 	Cache     transactionsCache
 	ConvertTo string
-	sync.Mutex
+	sync.RWMutex
 }
 
 type transactionsCache interface {
@@ -75,8 +75,8 @@ func (service *Service) Convert(from string, to string, amount float64) (float64
 }
 
 func (service *Service) GetUserBalance(id int) (float64, error) {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	balance, err := service.Repo.GetUserBalance(id)
 	if err != nil {
@@ -92,8 +92,8 @@ func (service *Service) GetUserBalance(id int) (float64, error) {
 }
 
 func (service *Service) DepositMoney(user users.User) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 	err := service.Repo.DepositMoney(user)
 	if err == nil { // если все успешно внеслось
 		err = service.Cache.AddTransaction(user.Id, fmt.Sprintf("Внесение на сумму: %2f", user.UpdateValue),
@@ -106,8 +106,8 @@ func (service *Service) DepositMoney(user users.User) error {
 }
 
 func (service *Service) WithdrawMoney(user users.User) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.WithdrawMoney(user)
 	if err == nil { // если все успешно внеслось
@@ -120,8 +120,8 @@ func (service *Service) WithdrawMoney(user users.User) error {
 }
 
 func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.TransferMoney(usersTransfer)
 	if err == nil { // если все успешно внеслось
@@ -138,16 +138,13 @@ func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
 }
 
 func (service *Service) IsUserExisting(id int) bool {
-	service.Lock()
-	defer service.Unlock()
-
 	isExist := service.Repo.IsUserExisting(id)
 	return isExist
 }
 
 func (service *Service) CreateUser(id int) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.CreateUser(id)
 	return err
@@ -162,9 +159,6 @@ func (service *Service) AddTransaction(id int, description string, date string) 
 }
 
 func (service *Service) GetUserTransactions(id int) ([]users.Transaction, error) {
-	service.Lock()
-	defer service.Unlock()
-
 	transactions, err := service.Cache.GetUserTransactions(id)
 	return transactions, err
 }
