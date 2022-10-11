@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/sQUARys/TestTaskAvito/app/users"
 	"log"
@@ -36,6 +37,25 @@ func New() *Repository {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	//driver, err := mysql.WithInstance(db, &mysql.Config{})
+	//if err != nil {
+	//	log.Fatalf("could not start sql migration... %v", err)
+	//}
+	//
+	//m, err := migrate.NewWithDatabaseInstance(
+	//	"/",
+	//	"postgres", driver)
+	//
+	//if err != nil {
+	//	log.Fatalf("migration failed... %v", err)
+	//}
+	//
+	//if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	//	log.Fatalf("An error occurred while syncing the database.. %v", err)
+	//}
+	//
+	//log.Println("Database migrated")
 
 	repo := Repository{
 		DbStruct: db,
