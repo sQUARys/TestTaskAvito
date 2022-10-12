@@ -43,8 +43,6 @@ func main() {
 	}
 
 	err = server.ListenAndServe()
-	//
-	//err = http.ListenAndServe(":8081", routers.Router)
 
 	if err != nil {
 		log.Println("Error in main : ", err)
