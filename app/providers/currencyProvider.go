@@ -8,16 +8,21 @@ import (
 	"net/http"
 )
 
-type currencyProvider struct{}
+type currencyProvider struct {
+	urlFormat string
+	key       string
+}
 
 func New() *currencyProvider {
-	return &currencyProvider{}
+	return &currencyProvider{
+		urlFormat: "https://api.apilayer.com/exchangerates_data/convert?to=%s&from=%s&amount=%f",
+		key:       "OW7XhQPjG87aX7vEg5bz0glUbL2BgMeX",
+	}
 }
 
 func (prov *currencyProvider) Convert(from string, to string, amount float64) (float64, error) {
-	format := "https://api.apilayer.com/exchangerates_data/convert?to=%s&from=%s&amount=%f"
 
-	url := fmt.Sprintf(format, to, from, amount)
+	url := fmt.Sprintf(prov.urlFormat, to, from, amount)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -25,7 +30,7 @@ func (prov *currencyProvider) Convert(from string, to string, amount float64) (f
 		return 0, err
 	}
 
-	req.Header.Set("apikey", "OW7XhQPjG87aX7vEg5bz0glUbL2BgMeX")
+	req.Header.Set("apikey", prov.key)
 
 	res, err := client.Do(req)
 	if res.Body != nil {
