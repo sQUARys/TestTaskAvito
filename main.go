@@ -2,6 +2,7 @@ package main
 
 import (
 	controller "github.com/sQUARys/TestTaskAvito/app/controllers"
+	"github.com/sQUARys/TestTaskAvito/app/providers"
 	"github.com/sQUARys/TestTaskAvito/app/repositories"
 	"github.com/sQUARys/TestTaskAvito/app/routers"
 	"github.com/sQUARys/TestTaskAvito/app/services"
@@ -20,15 +21,16 @@ import (
 //7. Локи на уровне сервиса - пока ищем баланс одного пользователя, никто другой не может свой баланс получить DONE
 //8. Обработка ошибок в контроллере - запись данных в ответ до записи заголовков это ошибка (как и формирование http статуса
 //из количества записанных байт из Write) DONE
-//9. Сделать оповещение в виде JSON о том что успешнор сняли/положили деньги DONE
+//9. Сделать оповещение в виде JSON о том что успешно сняли/положили деньги DONE
 
 func main() {
+	currencyProvider := providers.New()
 	repoUsers := repositories.New()
 	repoTransactions, err := transactionsCache.New()
 	if err != nil {
 		log.Println(err)
 	}
-	service := services.New(repoUsers, repoTransactions)
+	service := services.New(repoUsers, repoTransactions, currencyProvider)
 
 	ctr := controller.New(service)
 

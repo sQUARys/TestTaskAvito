@@ -1,27 +1,29 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/sQUARys/TestTaskAvito/app/users"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"sync"
 	"time"
 )
 
 type Service struct {
+	Provider  currencyProvider
 	Repo      usersRepository
 	Cache     transactionsCache
 	ConvertTo string
 	sync.RWMutex
 }
 
+type currencyProvider interface {
+	Convert(from string, to string, amount float64) (float64, error)
+}
+
 type transactionsCache interface {
 	GetUserTransactions(id int) ([]users.Transaction, error)
 	AddTransaction(userId int, description string, date string) error
 }
+
 type usersRepository interface {
 	IsUserExisting(id int) bool
 	GetUserBalance(id int) (float64, error)
@@ -31,47 +33,14 @@ type usersRepository interface {
 	CreateUser(id int) error
 }
 
-func New(repository usersRepository, cache transactionsCache) *Service {
+func New(repository usersRepository, cache transactionsCache, provider currencyProvider) *Service {
 	serv := Service{
+		Provider:  provider,
 		Repo:      repository,
 		Cache:     cache,
 		ConvertTo: "",
 	}
 	return &serv
-}
-
-func (service *Service) Convert(from string, to string, amount float64) (float64, error) {
-	format := "https://api.apilayer.com/exchangerates_data/convert?to=%s&from=%s&amount=%f"
-
-	url := fmt.Sprintf(format, to, from, amount)
-
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	req.Header.Set("apikey", "OW7XhQPjG87aX7vEg5bz0glUbL2BgMeX")
-
-	res, err := client.Do(req)
-	if res.Body != nil {
-		defer func() {
-			err := res.Body.Close()
-			if err != nil {
-				log.Println(err)
-			}
-		}()
-	}
-
-	jsonMap := make(map[string]interface{})
-	body, err := ioutil.ReadAll(res.Body)
-
-	err = json.Unmarshal(body, &jsonMap)
-	if err != nil {
-		return 0, err
-	}
-
-	return jsonMap["result"].(float64), nil
 }
 
 func (service *Service) GetUserBalance(id int) (float64, error) {
@@ -83,7 +52,7 @@ func (service *Service) GetUserBalance(id int) (float64, error) {
 		return -1, err
 	}
 	if service.ConvertTo != "" {
-		balance, err = service.Convert("RUB", service.ConvertTo, balance)
+		balance, err = service.Provider.Convert("RUB", service.ConvertTo, balance)
 		if err != nil {
 			return -1, err
 		}
