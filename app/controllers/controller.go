@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
 	"github.com/sQUARys/TestTaskAvito/app/users"
@@ -92,6 +93,7 @@ func (ctr *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(ok)
+	SendOkMessage(w, "create")
 }
 
 func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +126,8 @@ func (ctr *Controller) DepositMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err, serverInternal)
 	}
 	w.WriteHeader(ok)
+	SendOkMessage(w, "deposit")
+
 }
 
 func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +160,7 @@ func (ctr *Controller) WithdrawMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err, serverInternal)
 	}
 	w.WriteHeader(ok)
+	SendOkMessage(w, "withdraw")
 }
 
 func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
@@ -188,6 +193,8 @@ func (ctr *Controller) TransferMoney(w http.ResponseWriter, r *http.Request) {
 		ErrorHandler(w, err, serverInternal)
 	}
 	w.WriteHeader(ok)
+	SendOkMessage(w, "transfer")
+
 }
 
 func (ctr *Controller) GetUserTransactions(w http.ResponseWriter, r *http.Request) {
@@ -221,5 +228,22 @@ func ErrorHandler(w http.ResponseWriter, err error, statusCode int) {
 	_, writeError := w.Write([]byte(err.Error()))
 	if writeError != nil {
 		log.Println(writeError)
+	}
+}
+
+func SendOkMessage(w http.ResponseWriter, action string) {
+	message := fmt.Sprintf("Action %s done succesful.", action)
+	responseString := users.ResponseOK{
+		Message: message,
+	}
+
+	responseJSON, err := json.Marshal(responseString)
+	if err != nil {
+		ErrorHandler(w, err, http.StatusInternalServerError)
+	}
+
+	_, err = w.Write(responseJSON)
+	if err != nil {
+		ErrorHandler(w, err, http.StatusInternalServerError)
 	}
 }
