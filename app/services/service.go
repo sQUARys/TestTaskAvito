@@ -1,26 +1,29 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/sQUARys/TestTaskAvito/app/users"
-	"io/ioutil"
-	"net/http"
 	"sync"
 	"time"
 )
 
 type Service struct {
+	Provider  currencyProvider
 	Repo      usersRepository
 	Cache     transactionsCache
 	ConvertTo string
-	sync.Mutex
+	sync.RWMutex
+}
+
+type currencyProvider interface {
+	Convert(from string, to string, amount float64) (float64, error)
 }
 
 type transactionsCache interface {
 	GetUserTransactions(id int) ([]users.Transaction, error)
 	AddTransaction(userId int, description string, date string) error
 }
+
 type usersRepository interface {
 	IsUserExisting(id int) bool
 	GetUserBalance(id int) (float64, error)
@@ -30,8 +33,9 @@ type usersRepository interface {
 	CreateUser(id int) error
 }
 
-func New(repository usersRepository, cache transactionsCache) *Service {
+func New(repository usersRepository, cache transactionsCache, provider currencyProvider) *Service {
 	serv := Service{
+		Provider:  provider,
 		Repo:      repository,
 		Cache:     cache,
 		ConvertTo: "",
@@ -39,45 +43,16 @@ func New(repository usersRepository, cache transactionsCache) *Service {
 	return &serv
 }
 
-func (service *Service) Convert(from string, to string, amount float64) (float64, error) {
-	format := "https://api.apilayer.com/exchangerates_data/convert?to=%s&from=%s&amount=%f"
-
-	url := fmt.Sprintf(format, to, from, amount)
-
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	req.Header.Set("apikey", "OW7XhQPjG87aX7vEg5bz0glUbL2BgMeX")
-
-	res, err := client.Do(req)
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
-
-	jsonMap := make(map[string]interface{})
-	body, err := ioutil.ReadAll(res.Body)
-
-	err = json.Unmarshal(body, &jsonMap)
-	if err != nil {
-		return 0, err
-	}
-
-	return jsonMap["result"].(float64), nil
-}
-
 func (service *Service) GetUserBalance(id int) (float64, error) {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	balance, err := service.Repo.GetUserBalance(id)
 	if err != nil {
 		return -1, err
 	}
 	if service.ConvertTo != "" {
-		balance, err = service.Convert("RUB", service.ConvertTo, balance)
+		balance, err = service.Provider.Convert("RUB", service.ConvertTo, balance)
 		if err != nil {
 			return -1, err
 		}
@@ -86,8 +61,8 @@ func (service *Service) GetUserBalance(id int) (float64, error) {
 }
 
 func (service *Service) DepositMoney(user users.User) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 	err := service.Repo.DepositMoney(user)
 	if err == nil { // если все успешно внеслось
 		err = service.Cache.AddTransaction(user.Id, fmt.Sprintf("Внесение на сумму: %2f", user.UpdateValue),
@@ -100,8 +75,8 @@ func (service *Service) DepositMoney(user users.User) error {
 }
 
 func (service *Service) WithdrawMoney(user users.User) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.WithdrawMoney(user)
 	if err == nil { // если все успешно внеслось
@@ -114,40 +89,37 @@ func (service *Service) WithdrawMoney(user users.User) error {
 }
 
 func (service *Service) TransferMoney(usersTransfer users.TransferMoney) error {
-	service.Lock()
-	defer service.Unlock()
-
-	var wg sync.WaitGroup
-	defer wg.Wait()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.TransferMoney(usersTransfer)
 	if err == nil { // если все успешно внеслось
-		wg.Add(1)
-		go service.AddTransaction(&wg, usersTransfer.IdOfSenderUser, fmt.Sprintf("Перевод на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
-		wg.Add(1)
-		go service.AddTransaction(&wg, usersTransfer.IdOfRecipientUser, fmt.Sprintf("Получение перевода на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		err = service.AddTransaction(usersTransfer.IdOfSenderUser, fmt.Sprintf("Перевод на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
+		err = service.AddTransaction(usersTransfer.IdOfRecipientUser, fmt.Sprintf("Получение перевода на сумму: %2f", usersTransfer.SendingAmount), time.Now().Format("01-02-2006 15:04:05"))
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
 
 func (service *Service) IsUserExisting(id int) bool {
-	service.Lock()
-	defer service.Unlock()
-
 	isExist := service.Repo.IsUserExisting(id)
 	return isExist
 }
 
 func (service *Service) CreateUser(id int) error {
-	service.Lock()
-	defer service.Unlock()
+	service.RLock()
+	defer service.RUnlock()
 
 	err := service.Repo.CreateUser(id)
 	return err
 }
 
-func (service *Service) AddTransaction(wg *sync.WaitGroup, id int, description string, date string) error {
-	defer wg.Done()
+func (service *Service) AddTransaction(id int, description string, date string) error {
 	err := service.Cache.AddTransaction(id, description, date)
 	if err != nil {
 		return err
@@ -156,9 +128,6 @@ func (service *Service) AddTransaction(wg *sync.WaitGroup, id int, description s
 }
 
 func (service *Service) GetUserTransactions(id int) ([]users.Transaction, error) {
-	service.Lock()
-	defer service.Unlock()
-
 	transactions, err := service.Cache.GetUserTransactions(id)
 	return transactions, err
 }

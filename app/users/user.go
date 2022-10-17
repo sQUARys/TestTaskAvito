@@ -17,3 +17,7 @@ type Transaction struct {
 	Date        string `json:"date"`
 	Description string `json:"description"`
 }
+
+type ResponseOK struct {
+	Message string `json:"message"`
+}

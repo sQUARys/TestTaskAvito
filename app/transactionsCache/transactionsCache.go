@@ -18,18 +18,21 @@ type FormatOfTransaction struct {
 	Date        string
 }
 
-func New() *Cache {
+func New() (*Cache, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "127.0.0.1:6379",
 		Password: "",
 		DB:       0,
 	})
 
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
+	_, err := client.Ping().Result()
+	if err != nil {
+		err = fmt.Errorf("%w", err)
+	}
+
 	return &Cache{
 		Client: client,
-	}
+	}, err
 }
 
 func (c *Cache) AddTransaction(userId int, description string, date string) error {
@@ -57,8 +60,8 @@ func (c *Cache) GetUserTransaction(key string) (users.Transaction, error) {
 		return users.Transaction{}, err
 	}
 	var transaction users.Transaction
-	json.Unmarshal([]byte(transactionJSON), &transaction)
-	return transaction, nil
+	err = json.Unmarshal([]byte(transactionJSON), &transaction)
+	return transaction, err
 }
 
 func (c *Cache) GetUserTransactions(id int) ([]users.Transaction, error) {
