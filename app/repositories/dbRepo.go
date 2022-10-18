@@ -165,10 +165,7 @@ func (repo *Repository) TransferMoney(usersTransfer users.TransferMoney) error {
 
 func (repo *Repository) IsUserExisting(id int) bool {
 	row := repo.DbStruct.QueryRow(dbUsersByIdRequest, id)
-
-	var user users.User
-
-	err := row.Scan(&user.Id, &user.Balance)
+	err := row.Scan(&id)
 
 	return err != sql.ErrNoRows
 }

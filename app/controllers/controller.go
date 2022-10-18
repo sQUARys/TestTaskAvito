@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sQUARys/TestTaskAvito/app/services"
@@ -15,11 +16,14 @@ import (
 
 const (
 	ok             = http.StatusOK
-	noContent      = http.StatusNoContent
 	serverInternal = http.StatusInternalServerError
 	badRequest     = http.StatusBadRequest
 	notFound       = http.StatusNotFound
 )
+
+type ErrorResponse struct {
+	error string `json:"error"`
+}
 
 type Controller struct {
 	Service services.Service
@@ -37,6 +41,7 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	currency := vars["currency"]
+
 	ctr.Service.ConvertTo = currency
 	idString := vars["id"]
 
@@ -47,14 +52,14 @@ func (ctr *Controller) GetUserBalance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !ctr.Service.IsUserExisting(idInt) { // если в бд нет пользователя с таким id выводим ошибку
-		ErrorHandler(w, err, noContent)
+		ErrorHandler(w, errors.New("User is not exist"), serverInternal)
 		return
 	}
 
 	balance, err := ctr.Service.GetUserBalance(idInt)
 
 	if err != nil {
-		ErrorHandler(w, err, noContent)
+		ErrorHandler(w, err, serverInternal)
 		return
 	}
 
@@ -224,10 +229,21 @@ func (ctr *Controller) GetUserTransactions(w http.ResponseWriter, r *http.Reques
 }
 
 func ErrorHandler(w http.ResponseWriter, err error, statusCode int) {
+	errorResponse := ErrorResponse{
+		error: err.Error(),
+	}
+
+	errStrJSON, errMarshal := json.Marshal(&errorResponse)
+	if errMarshal != nil {
+		log.Println(errMarshal)
+		return
+	}
+
 	w.WriteHeader(statusCode)
-	_, writeError := w.Write([]byte(err.Error()))
-	if writeError != nil {
-		log.Println(writeError)
+	_, errorWriting := w.Write(errStrJSON)
+	if errorWriting != nil {
+		log.Println(errorWriting)
+		return
 	}
 }
 

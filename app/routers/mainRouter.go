@@ -19,7 +19,8 @@ func New(controller *controller.Controller) *Router {
 }
 
 func (r *Router) SetRoutes() {
-	r.Router.HandleFunc("/get-balance/{id}&{currency}", r.Controller.GetUserBalance).Methods("Get")
+	r.Router.HandleFunc("/get-balance/{id:[0-9]+}&{currency}", r.Controller.GetUserBalance).Methods("Get")
+	r.Router.HandleFunc("/get-balance/{id:[0-9]+}", r.Controller.GetUserBalance).Methods("Get")
 	r.Router.HandleFunc("/create-user/{id}", r.Controller.CreateUser).Methods("Get")
 	r.Router.HandleFunc("/get-transactions/{id}", r.Controller.GetUserTransactions).Methods("Get")
 
